@@ -1,21 +1,21 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
-import { HapticTab } from '@/components/haptic-tab';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/context/AuthContext';
-import { useApp } from '@/context/AppContext';
+import { HapticTab } from "@/components/haptic-tab";
+import { Colors } from "@/constants/theme";
+import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { user } = useAuth();
   const { unreadCount } = useApp();
 
-  const isDriver = user?.role === 'driver';
+  const isDriver = user?.role === "driver";
 
   return (
     <Tabs
@@ -33,28 +33,28 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? 'home' : 'home-outline'} 
-              size={24} 
-              color={color} 
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={24}
+              color={color}
             />
           ),
         }}
       />
-      
+
       {/* Driver-only: Students tab */}
       <Tabs.Screen
         name="students"
         options={{
-          title: 'Students',
-          href: isDriver ? '/(tabs)/students' : null,
+          title: "Students",
+          href: isDriver ? "/(tabs)/students" : null,
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? 'people' : 'people-outline'} 
-              size={24} 
-              color={color} 
+            <Ionicons
+              name={focused ? "people" : "people-outline"}
+              size={24}
+              color={color}
             />
           ),
         }}
@@ -64,13 +64,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="tracking"
         options={{
-          title: 'Tracking',
-          href: !isDriver ? '/(tabs)/tracking' : null,
+          title: "Tracking",
+          href: !isDriver ? "/(tabs)/tracking" : null,
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? 'navigate' : 'navigate-outline'} 
-              size={24} 
-              color={color} 
+            <Ionicons
+              name={focused ? "navigate" : "navigate-outline"}
+              size={24}
+              color={color}
             />
           ),
         }}
@@ -79,32 +79,32 @@ export default function TabLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Map',
+          title: "Map",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? 'map' : 'map-outline'} 
-              size={24} 
-              color={color} 
+            <Ionicons
+              name={focused ? "map" : "map-outline"}
+              size={24}
+              color={color}
             />
           ),
         }}
       />
-      
+
       <Tabs.Screen
         name="notifications"
         options={{
-          title: 'Alerts',
+          title: "Alerts",
           tabBarIcon: ({ color, focused }) => (
             <View>
-              <Ionicons 
-                name={focused ? 'notifications' : 'notifications-outline'} 
-                size={24} 
-                color={color} 
+              <Ionicons
+                name={focused ? "notifications" : "notifications-outline"}
+                size={24}
+                color={color}
               />
               {unreadCount > 0 && (
                 <View style={[styles.badge, { backgroundColor: colors.error }]}>
                   <Text style={styles.badgeText}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </Text>
                 </View>
               )}
@@ -132,19 +132,19 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: -4,
     right: -8,
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });
