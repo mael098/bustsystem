@@ -1,132 +1,155 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { User, Driver, Parent } from '@/types';
-import { mockDriver, mockParents, mockCredentials } from '@/data/mock-data';
+import type { User } from "@/types";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  register: (name: string, email: string, password: string, role: 'driver' | 'parent') => Promise<{ success: boolean; error?: string }>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    role: "driver" | "parent",
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// ✅ URL CORRECTA (SIN espacios y sin duplicar rutas)
+const API_URL = "https://z2ws6c1n-3000.usw3.devtunnels.ms";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    try {
-      // Check driver credentials
-      if (email === mockCredentials.driver.email && password === mockCredentials.driver.password) {
-        setUser(mockDriver);
-        setIsLoading(false);
-        return { success: true };
-      }
-      
-      // Check parent credentials
-      if (email === mockCredentials.parent.email && password === mockCredentials.parent.password) {
-        setUser(mockParents[0]);
-        setIsLoading(false);
-        return { success: true };
-      }
-      
-      // Check other parent emails (same password for demo)
-      const parent = mockParents.find(p => p.email === email);
-      if (parent && password === 'parent123') {
-        setUser(parent);
-        setIsLoading(false);
-        return { success: true };
-      }
-      
-      setIsLoading(false);
-      return { success: false, error: 'Invalid email or password' };
-    } catch (error) {
-      setIsLoading(false);
-      return { success: false, error: 'An error occurred during login' };
-    }
-  }, []);
+  // 🔐 LOGIN
+  const login = useCallback(
+    async (
+      email: string,
+      password: string,
+    ): Promise<{ success: boolean; error?: string }> => {
+      setIsLoading(true);
 
+      try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email: email.toLowerCase(), password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setIsLoading(false);
+          return {
+            success: false,
+            error: data.message || "Credenciales inválidas",
+          };
+        }
+
+        setUser(data.user);
+
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: "Error de conexión con el servidor",
+        };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  // 🚪 LOGOUT
   const logout = useCallback(() => {
     setUser(null);
   }, []);
 
-  const register = useCallback(async (
-    name: string, 
-    email: string, 
-    password: string, 
-    role: 'driver' | 'parent'
-  ): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    try {
-      // In a real app, this would create a new user in the database
-      // For this demo, we'll create a mock user
-      const newUser: User = {
-        id: `user-${Date.now()}`,
-        email,
-        name,
-        role,
-        phone: '',
-      };
-      
-      if (role === 'driver') {
-        const driverUser: Driver = {
-          ...newUser,
-          role: 'driver',
-          vehicleInfo: {
-            model: 'Not specified',
-            plateNumber: 'Not specified',
-            capacity: 0,
+  // 🆕 REGISTER
+  const register = useCallback(
+    async (
+      name: string,
+      email: string,
+      password: string,
+      role: "driver" | "parent",
+    ): Promise<{ success: boolean; error?: string }> => {
+      setIsLoading(true);
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          isOnRoute: false,
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+            role,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          return {
+            success: false,
+            error: data.message || "Error al registrar",
+          };
+        }
+
+        // 👉 Guardamos el usuario que viene del backend
+        setUser(data.user);
+
+        return { success: true };
+      } catch (error) {
+        return {
+          success: false,
+          error: "Error de conexión con el servidor",
         };
-        setUser(driverUser);
-      } else {
-        const parentUser: Parent = {
-          ...newUser,
-          role: 'parent',
-          childrenIds: [],
-        };
-        setUser(parentUser);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-      return { success: true };
-    } catch (error) {
-      setIsLoading(false);
-      return { success: false, error: 'An error occurred during registration' };
-    }
-  }, []);
+    },
+    [],
+  );
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      login,
-      logout,
-      register,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        logout,
+        register,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
+// 🧠 Hook personalizado
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

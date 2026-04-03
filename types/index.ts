@@ -1,5 +1,5 @@
 // User Types
-export type UserRole = 'driver' | 'parent';
+export type UserRole = "driver" | "parent";
 
 export interface User {
   id: string;
@@ -11,7 +11,7 @@ export interface User {
 }
 
 export interface Driver extends User {
-  role: 'driver';
+  role: "driver";
   vehicleInfo: {
     model: string;
     plateNumber: string;
@@ -22,12 +22,18 @@ export interface Driver extends User {
 }
 
 export interface Parent extends User {
-  role: 'parent';
+  role: "parent";
   childrenIds: string[];
 }
 
 // Student Types
-export type StudentStatus = 'home' | 'picked_up' | 'in_transit' | 'at_school' | 'returning' | 'delivered';
+export type StudentStatus =
+  | "home"
+  | "picked_up"
+  | "in_transit"
+  | "at_school"
+  | "returning"
+  | "delivered";
 
 export interface Student {
   id: string;
@@ -55,7 +61,7 @@ export interface Location {
 
 export interface RoutePoint {
   id: string;
-  type: 'pickup' | 'dropoff' | 'school';
+  type: "pickup" | "dropoff" | "school";
   studentId: string;
   location: Location;
   address: string;
@@ -64,7 +70,13 @@ export interface RoutePoint {
 }
 
 // Route Types
-export type RouteStatus = 'not_started' | 'morning_pickup' | 'to_school' | 'afternoon_pickup' | 'returning_home' | 'completed';
+export type RouteStatus =
+  | "not_started"
+  | "morning_pickup"
+  | "to_school"
+  | "afternoon_pickup"
+  | "returning_home"
+  | "completed";
 
 export interface Route {
   id: string;
@@ -77,7 +89,13 @@ export interface Route {
 }
 
 // Notification Types
-export type NotificationType = 'pickup' | 'dropoff' | 'arrival_school' | 'arrival_home' | 'delay' | 'info';
+export type NotificationType =
+  | "pickup"
+  | "dropoff"
+  | "arrival_school"
+  | "arrival_home"
+  | "delay"
+  | "info";
 
 export interface Notification {
   id: string;

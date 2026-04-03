@@ -1,18 +1,32 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useApp } from '@/context/AppContext';
-import { NotificationItem } from '@/components/NotificationItem';
-import { Button } from '@/components/ui/Button';
+import { NotificationItem } from "@/components/NotificationItem";
+import { Button } from "@/components/ui/Button";
+import { BorderRadius, Colors, FontSizes, Spacing } from "@/constants/theme";
+import { useApp } from "@/context/AppContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { NotificationType } from "@/types";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import {
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NotificationsScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
-  const { notifications, markNotificationRead, clearNotifications, unreadCount, addNotification } = useApp();
+  const {
+    notifications,
+    markNotificationRead,
+    clearNotifications,
+    unreadCount,
+    addNotification,
+  } = useApp();
   const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = React.useCallback(() => {
@@ -25,50 +39,78 @@ export default function NotificationsScreen() {
   };
 
   const markAllAsRead = () => {
-    notifications.forEach(n => {
+    notifications.forEach((n) => {
       if (!n.read) markNotificationRead(n.id);
     });
   };
 
-  // Demo: Add a sample notification
+  // Demo: agregar notificación de prueba
   const addSampleNotification = () => {
-    const types = ['pickup', 'dropoff', 'arrival_school', 'arrival_home', 'info'] as const;
     const messages = [
-      { type: 'pickup', title: 'Child Picked Up', message: 'Sofia has been picked up from home.' },
-      { type: 'dropoff', title: 'Child Dropped Off', message: 'James has been dropped off at school.' },
-      { type: 'arrival_school', title: 'Arrived at School', message: 'All students have arrived safely at school.' },
-      { type: 'arrival_home', title: 'Arrived Home', message: 'Emma has been delivered home safely.' },
-      { type: 'info', title: 'Route Update', message: 'The driver has started the afternoon route.' },
+      {
+        type: "pickup",
+        title: "Niño recogido",
+        message: "Sofía ha sido recogida de casa.",
+      },
+      {
+        type: "dropoff",
+        title: "Niño dejado",
+        message: "James ha sido dejado en la escuela.",
+      },
+      {
+        type: "arrival_school",
+        title: "Llegada a la escuela",
+        message: "Todos los estudiantes llegaron con seguridad.",
+      },
+      {
+        type: "arrival_home",
+        title: "Llegada a casa",
+        message: "Emma ha sido entregada en casa.",
+      },
+      {
+        type: "info",
+        title: "Actualización de ruta",
+        message: "El conductor inició la ruta de la tarde.",
+      },
     ];
-    
+
     const randomMsg = messages[Math.floor(Math.random() * messages.length)];
     addNotification({
-      type: randomMsg.type,
+      type: randomMsg.type as NotificationType,
       title: randomMsg.title,
       message: randomMsg.message,
     });
   };
 
-  const todayNotifications = notifications.filter(n => {
+  const todayNotifications = notifications.filter((n) => {
     const today = new Date();
     const notifDate = new Date(n.timestamp);
     return notifDate.toDateString() === today.toDateString();
   });
 
-  const olderNotifications = notifications.filter(n => {
+  const olderNotifications = notifications.filter((n) => {
     const today = new Date();
     const notifDate = new Date(n.timestamp);
     return notifDate.toDateString() !== today.toDateString();
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.background, paddingTop: insets.top },
+      ]}
+    >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Notifications</Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          Notificaciones
+        </Text>
         {unreadCount > 0 && (
           <TouchableOpacity onPress={markAllAsRead}>
-            <Text style={{ color: colors.primary, fontWeight: '500' }}>Mark all read</Text>
+            <Text style={{ color: colors.primary, fontWeight: "500" }}>
+              Marcar todas como leídas
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -78,15 +120,26 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+          />
         }
       >
-        {/* Demo Controls */}
-        <View style={[styles.demoControls, { backgroundColor: colors.backgroundSecondary }]}>
+        {/* Demo */}
+        <View
+          style={[
+            styles.demoControls,
+            { backgroundColor: colors.backgroundSecondary },
+          ]}
+        >
           <Ionicons name="flask" size={18} color={colors.warning} />
-          <Text style={[styles.demoText, { color: colors.textSecondary }]}>Demo Mode</Text>
+          <Text style={[styles.demoText, { color: colors.textSecondary }]}>
+            Modo demo
+          </Text>
           <Button
-            title="Add Notification"
+            title="Agregar notificación"
             onPress={addSampleNotification}
             variant="outline"
             size="sm"
@@ -95,23 +148,29 @@ export default function NotificationsScreen() {
 
         {notifications.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="notifications-off-outline" size={64} color={colors.textMuted} />
+            <Ionicons
+              name="notifications-off-outline"
+              size={64}
+              color={colors.textMuted}
+            />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
-              No Notifications
+              Sin notificaciones
             </Text>
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              {"You'll receive notifications about your children's transportation status here."}
+              Recibirás notificaciones sobre el transporte de tus hijos aquí.
             </Text>
           </View>
         ) : (
           <>
-            {/* Today's Notifications */}
+            {/* Hoy */}
             {todayNotifications.length > 0 && (
               <>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  Today
+                <Text
+                  style={[styles.sectionTitle, { color: colors.textSecondary }]}
+                >
+                  Hoy
                 </Text>
-                {todayNotifications.map(notification => (
+                {todayNotifications.map((notification) => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
@@ -121,13 +180,18 @@ export default function NotificationsScreen() {
               </>
             )}
 
-            {/* Older Notifications */}
+            {/* Anteriores */}
             {olderNotifications.length > 0 && (
               <>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
-                  Earlier
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: colors.textSecondary, marginTop: Spacing.lg },
+                  ]}
+                >
+                  Anteriores
                 </Text>
-                {olderNotifications.map(notification => (
+                {olderNotifications.map((notification) => (
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
@@ -137,9 +201,9 @@ export default function NotificationsScreen() {
               </>
             )}
 
-            {/* Clear All Button */}
+            {/* Limpiar */}
             <Button
-              title="Clear All Notifications"
+              title="Eliminar todas las notificaciones"
               onPress={clearNotifications}
               variant="ghost"
               fullWidth
@@ -157,15 +221,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
   },
   title: {
     fontSize: FontSizes.xxl,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   list: {
     flex: 1,
@@ -175,8 +239,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl,
   },
   demoControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.lg,
@@ -188,26 +252,26 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSizes.sm,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: Spacing.sm,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: Spacing.xxl * 2,
     paddingHorizontal: Spacing.lg,
   },
   emptyTitle: {
     fontSize: FontSizes.xl,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: Spacing.lg,
     marginBottom: Spacing.sm,
   },
   emptyText: {
     fontSize: FontSizes.md,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
 });

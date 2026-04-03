@@ -1,46 +1,48 @@
-import React, { useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { BorderRadius, Colors, FontSizes, Spacing } from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
+import { mockCredentials } from "@/data/mock-data";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
+import { Link, router } from "expo-router";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
-} from 'react-native';
-import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { mockCredentials } from '@/data/mock-data';
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { login, isLoading } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
+    {},
+  );
 
   const validate = () => {
     const newErrors: { email?: string; password?: string } = {};
-    
+
     if (!email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = "Please enter a valid email";
     }
-    
+
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -49,11 +51,11 @@ export default function LoginScreen() {
     if (!validate()) return;
 
     const result = await login(email, password);
-    
+
     if (result.success) {
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } else {
-      Alert.alert('Login Failed', result.error || 'Invalid credentials');
+      Alert.alert("Login Failed", result.error || "Invalid credentials");
     }
   };
 
@@ -69,7 +71,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <ScrollView
@@ -78,7 +80,9 @@ export default function LoginScreen() {
       >
         {/* Logo & Header */}
         <View style={styles.header}>
-          <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
+          <View
+            style={[styles.logoContainer, { backgroundColor: colors.primary }]}
+          >
             <Ionicons name="bus" size={48} color="#FFFFFF" />
           </View>
           <Text style={[styles.title, { color: colors.text }]}>BustSystem</Text>
@@ -121,11 +125,13 @@ export default function LoginScreen() {
           />
 
           <View style={styles.registerLink}>
-            <Text style={[styles.registerText, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.registerText, { color: colors.textSecondary }]}
+            >
               {"Don't have an account? "}
             </Text>
             <Link href="/(auth)/register" style={styles.link}>
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
                 Sign Up
               </Text>
             </Link>
@@ -143,14 +149,22 @@ export default function LoginScreen() {
               onPress={fillDriverCredentials}
               variant="outline"
               size="sm"
-              icon={<Ionicons name="car-outline" size={16} color={colors.primary} />}
+              icon={
+                <Ionicons name="car-outline" size={16} color={colors.primary} />
+              }
             />
             <Button
               title="Parent Demo"
               onPress={fillParentCredentials}
               variant="outline"
               size="sm"
-              icon={<Ionicons name="people-outline" size={16} color={colors.primary} />}
+              icon={
+                <Ionicons
+                  name="people-outline"
+                  size={16}
+                  color={colors.primary}
+                />
+              }
             />
           </View>
         </View>
@@ -165,24 +179,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: Spacing.lg,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: Spacing.xl,
   },
   logoContainer: {
     width: 96,
     height: 96,
     borderRadius: BorderRadius.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.md,
   },
   title: {
     fontSize: FontSizes.xxxl,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: Spacing.xs,
   },
   subtitle: {
@@ -192,8 +206,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   registerLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: Spacing.md,
   },
   registerText: {
@@ -206,14 +220,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xxl,
     paddingTop: Spacing.lg,
     borderTopWidth: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   demoTitle: {
     fontSize: FontSizes.sm,
     marginBottom: Spacing.md,
   },
   demoButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
   },
 });

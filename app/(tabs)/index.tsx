@@ -1,19 +1,25 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/context/AuthContext';
-import { useApp } from '@/context/AppContext';
-import { RouteCard } from '@/components/RouteCard';
-import { StudentCard } from '@/components/StudentCard';
-import { Button } from '@/components/ui/Button';
+import { RouteCard } from "@/components/RouteCard";
+import { StudentCard } from "@/components/StudentCard";
+import { Button } from "@/components/ui/Button";
+import { Colors, FontSizes, Spacing } from "@/constants/theme";
+import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const {
@@ -25,21 +31,28 @@ export default function HomeScreen() {
     unreadCount,
   } = useApp();
 
-  // If not authenticated, show login prompt
+  // Si no está autenticado
   if (!user) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background, paddingTop: insets.top },
+        ]}
+      >
         <View style={styles.centeredContent}>
           <Ionicons name="bus" size={64} color={colors.primary} />
           <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-            Welcome to BustSystem
+            Bienvenido a BustSystem
           </Text>
-          <Text style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}>
-            Please sign in to continue
+          <Text
+            style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}
+          >
+            Inicia sesión para continuar
           </Text>
           <Button
-            title="Sign In"
-            onPress={() => router.push('/(auth)/login')}
+            title="Iniciar sesión"
+            onPress={() => router.push("/(auth)/login")}
             size="lg"
             style={{ marginTop: Spacing.lg }}
           />
@@ -48,27 +61,37 @@ export default function HomeScreen() {
     );
   }
 
-  // Parent view - simplified
-  if (user.role === 'parent') {
+  // Vista de padre
+  if (user.role === "parent") {
     return (
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top },
+        ]}
       >
         <View style={styles.header}>
           <View>
             <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-              Welcome back,
+              Bienvenido de nuevo,
             </Text>
             <Text style={[styles.userName, { color: colors.text }]}>
               {user.name}
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/notifications')}
-            style={[styles.notifButton, { backgroundColor: colors.backgroundSecondary }]}
+            onPress={() => router.push("/(tabs)/notifications")}
+            style={[
+              styles.notifButton,
+              { backgroundColor: colors.backgroundSecondary },
+            ]}
           >
-            <Ionicons name="notifications-outline" size={24} color={colors.text} />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={colors.text}
+            />
             {unreadCount > 0 && (
               <View style={[styles.badge, { backgroundColor: colors.error }]}>
                 <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -78,12 +101,12 @@ export default function HomeScreen() {
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Your Children
+          Tus hijos
         </Text>
 
         {students
-          .filter(s => s.parentId === user.id)
-          .map(student => (
+          .filter((s) => s.parentId === user.id)
+          .map((student) => (
             <StudentCard
               key={student.id}
               student={student}
@@ -92,8 +115,8 @@ export default function HomeScreen() {
           ))}
 
         <Button
-          title="Track Vehicle"
-          onPress={() => router.push('/(tabs)/map')}
+          title="Rastrear vehículo"
+          onPress={() => router.push("/(tabs)/map")}
           fullWidth
           icon={<Ionicons name="location" size={20} color="#FFFFFF" />}
         />
@@ -101,29 +124,30 @@ export default function HomeScreen() {
     );
   }
 
-  // Driver view
+  // Funciones del driver
   const handlePickup = (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
+    const student = students.find((s) => s.id === studentId);
     if (!student) return;
 
-    if (student.status === 'home') {
-      updateStudentStatus(studentId, 'picked_up');
-    } else if (student.status === 'at_school') {
-      updateStudentStatus(studentId, 'returning');
+    if (student.status === "home") {
+      updateStudentStatus(studentId, "picked_up");
+    } else if (student.status === "at_school") {
+      updateStudentStatus(studentId, "returning");
     }
   };
 
   const handleDropoff = (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
+    const student = students.find((s) => s.id === studentId);
     if (!student) return;
 
-    if (student.status === 'picked_up') {
-      updateStudentStatus(studentId, 'at_school');
-    } else if (student.status === 'returning') {
-      updateStudentStatus(studentId, 'delivered');
+    if (student.status === "picked_up") {
+      updateStudentStatus(studentId, "at_school");
+    } else if (student.status === "returning") {
+      updateStudentStatus(studentId, "delivered");
     }
   };
 
+  // Vista de conductor
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -133,7 +157,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-            Welcome back,
+            Bienvenido de nuevo,
           </Text>
           <Text style={[styles.userName, { color: colors.text }]}>
             {user.name}
@@ -141,10 +165,17 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/notifications')}
-            style={[styles.notifButton, { backgroundColor: colors.backgroundSecondary }]}
+            onPress={() => router.push("/(tabs)/notifications")}
+            style={[
+              styles.notifButton,
+              { backgroundColor: colors.backgroundSecondary },
+            ]}
           >
-            <Ionicons name="notifications-outline" size={24} color={colors.text} />
+            <Ionicons
+              name="notifications-outline"
+              size={24}
+              color={colors.text}
+            />
             {unreadCount > 0 && (
               <View style={[styles.badge, { backgroundColor: colors.error }]}>
                 <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -153,37 +184,42 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={logout}
-            style={[styles.notifButton, { backgroundColor: colors.backgroundSecondary }]}
+            style={[
+              styles.notifButton,
+              { backgroundColor: colors.backgroundSecondary },
+            ]}
           >
             <Ionicons name="log-out-outline" size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Route Card */}
+      {/* Ruta */}
       <RouteCard
         route={currentRoute}
-        onStartMorning={() => startRoute('morning')}
-        onStartAfternoon={() => startRoute('afternoon')}
+        onStartMorning={() => startRoute("morning")}
+        onStartAfternoon={() => startRoute("afternoon")}
         onEndRoute={endRoute}
         studentsCount={students.length}
       />
 
-      {/* Students Section */}
+      {/* Estudiantes */}
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Students ({students.length})
+          Estudiantes ({students.length})
         </Text>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/students')}>
-          <Text style={{ color: colors.primary, fontWeight: '500' }}>See All</Text>
+        <TouchableOpacity onPress={() => router.push("/(tabs)/students")}>
+          <Text style={{ color: colors.primary, fontWeight: "500" }}>
+            Ver todos
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {students.slice(0, 3).map(student => (
+      {students.slice(0, 3).map((student) => (
         <StudentCard
           key={student.id}
           student={student}
-          showActions={!!currentRoute && currentRoute.status !== 'completed'}
+          showActions={!!currentRoute && currentRoute.status !== "completed"}
           onPickup={() => handlePickup(student.id)}
           onDropoff={() => handleDropoff(student.id)}
         />
@@ -191,8 +227,8 @@ export default function HomeScreen() {
 
       {students.length > 3 && (
         <Button
-          title={`View All ${students.length} Students`}
-          onPress={() => router.push('/(tabs)/students')}
+          title={`Ver los ${students.length} estudiantes`}
+          onPress={() => router.push("/(tabs)/students")}
           variant="outline"
           fullWidth
         />
@@ -211,13 +247,13 @@ const styles = StyleSheet.create({
   },
   centeredContent: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: Spacing.lg,
   },
   welcomeTitle: {
     fontSize: FontSizes.xxl,
-    fontWeight: '700',
+    fontWeight: "700",
     marginTop: Spacing.lg,
   },
   welcomeSubtitle: {
@@ -225,9 +261,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.lg,
   },
   greeting: {
@@ -235,44 +271,44 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontSize: FontSizes.xl,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   headerActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.sm,
   },
   notifButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     right: -2,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.md,
   },
   sectionTitle: {
     fontSize: FontSizes.lg,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

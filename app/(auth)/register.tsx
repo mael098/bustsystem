@@ -1,34 +1,39 @@
-import React, { useState } from 'react';
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
-  View,
-  Text,
-  StyleSheet,
+  BorderRadius,
+  Colors,
+  FontSizes,
+  Spacing
+} from "@/constants/theme";
+import { useAuth } from "@/context/AuthContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
+import { Link, router } from "expo-router";
+import React, { useState } from "react";
+import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-} from 'react-native';
-import { Link, router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSizes, BorderRadius, Shadow } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/context/AuthContext';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+  View,
+} from "react-native";
 
-type UserRole = 'driver' | 'parent';
+type UserRole = "driver" | "parent";
 
 export default function RegisterScreen() {
   const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const colors = Colors[colorScheme ?? "light"];
   const { register, isLoading } = useAuth();
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('parent');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("parent");
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -38,29 +43,29 @@ export default function RegisterScreen() {
 
   const validate = () => {
     const newErrors: typeof errors = {};
-    
+
     if (!name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = "Name is required";
     }
-    
+
     if (!email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = "Please enter a valid email";
     }
-    
+
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = "Password must be at least 6 characters";
     }
-    
+
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = "Please confirm your password";
     } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = "Passwords do not match";
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -69,17 +74,20 @@ export default function RegisterScreen() {
     if (!validate()) return;
 
     const result = await register(name, email, password, role);
-    
+
     if (result.success) {
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } else {
-      Alert.alert('Registration Failed', result.error || 'Something went wrong');
+      Alert.alert(
+        "Registration Failed",
+        result.error || "Something went wrong",
+      );
     }
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
       <ScrollView
@@ -88,7 +96,9 @@ export default function RegisterScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Create Account
+          </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
             Join BustSystem to manage school transportation
           </Text>
@@ -96,27 +106,35 @@ export default function RegisterScreen() {
 
         {/* Role Selection */}
         <View style={styles.roleSection}>
-          <Text style={[styles.roleLabel, { color: colors.text }]}>I am a:</Text>
+          <Text style={[styles.roleLabel, { color: colors.text }]}>
+            I am a:
+          </Text>
           <View style={styles.roleButtons}>
             <TouchableOpacity
-              onPress={() => setRole('parent')}
+              onPress={() => setRole("parent")}
               style={[
                 styles.roleButton,
                 {
-                  backgroundColor: role === 'parent' ? colors.primary : colors.backgroundSecondary,
-                  borderColor: role === 'parent' ? colors.primary : colors.border,
+                  backgroundColor:
+                    role === "parent"
+                      ? colors.primary
+                      : colors.backgroundSecondary,
+                  borderColor:
+                    role === "parent" ? colors.primary : colors.border,
                 },
               ]}
             >
               <Ionicons
                 name="people-outline"
                 size={24}
-                color={role === 'parent' ? '#FFFFFF' : colors.textSecondary}
+                color={role === "parent" ? "#FFFFFF" : colors.textSecondary}
               />
               <Text
                 style={[
                   styles.roleButtonText,
-                  { color: role === 'parent' ? '#FFFFFF' : colors.textSecondary },
+                  {
+                    color: role === "parent" ? "#FFFFFF" : colors.textSecondary,
+                  },
                 ]}
               >
                 Parent
@@ -124,24 +142,30 @@ export default function RegisterScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setRole('driver')}
+              onPress={() => setRole("driver")}
               style={[
                 styles.roleButton,
                 {
-                  backgroundColor: role === 'driver' ? colors.primary : colors.backgroundSecondary,
-                  borderColor: role === 'driver' ? colors.primary : colors.border,
+                  backgroundColor:
+                    role === "driver"
+                      ? colors.primary
+                      : colors.backgroundSecondary,
+                  borderColor:
+                    role === "driver" ? colors.primary : colors.border,
                 },
               ]}
             >
               <Ionicons
                 name="car-outline"
                 size={24}
-                color={role === 'driver' ? '#FFFFFF' : colors.textSecondary}
+                color={role === "driver" ? "#FFFFFF" : colors.textSecondary}
               />
               <Text
                 style={[
                   styles.roleButtonText,
-                  { color: role === 'driver' ? '#FFFFFF' : colors.textSecondary },
+                  {
+                    color: role === "driver" ? "#FFFFFF" : colors.textSecondary,
+                  },
                 ]}
               >
                 Driver
@@ -206,10 +230,10 @@ export default function RegisterScreen() {
 
           <View style={styles.loginLink}>
             <Text style={[styles.loginText, { color: colors.textSecondary }]}>
-              Already have an account?{' '}
+              Already have an account?{" "}
             </Text>
             <Link href="/(auth)/login" style={styles.link}>
-              <Text style={{ color: colors.primary, fontWeight: '600' }}>
+              <Text style={{ color: colors.primary, fontWeight: "600" }}>
                 Sign In
               </Text>
             </Link>
@@ -234,7 +258,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSizes.xxl,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: Spacing.xs,
   },
   subtitle: {
@@ -245,18 +269,18 @@ const styles = StyleSheet.create({
   },
   roleLabel: {
     fontSize: FontSizes.md,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: Spacing.md,
   },
   roleButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
   },
   roleButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: Spacing.md,
     borderRadius: BorderRadius.lg,
     borderWidth: 1.5,
@@ -264,14 +288,14 @@ const styles = StyleSheet.create({
   },
   roleButtonText: {
     fontSize: FontSizes.md,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   form: {
     gap: Spacing.sm,
   },
   loginLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: Spacing.md,
   },
   loginText: {

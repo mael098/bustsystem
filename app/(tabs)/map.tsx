@@ -14,8 +14,9 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import type { Student } from "@/types";
 
 const initialRegion = {
-  latitude: 40.7178,
-  longitude: -74.0031,
+  //22.4062998,-97.9300608
+  latitude: 22.4062998,
+  longitude: -97.9300608,
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
 };
