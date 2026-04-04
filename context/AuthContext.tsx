@@ -26,7 +26,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ✅ URL CORRECTA (SIN espacios y sin duplicar rutas)
 const API_URL = "https://z2ws6c1n-3000.usw3.devtunnels.ms";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -34,46 +33,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
 
   // 🔐 LOGIN
-  const login = useCallback(
-    async (
-      email: string,
-      password: string,
-    ): Promise<{ success: boolean; error?: string }> => {
-      setIsLoading(true);
+  const login = useCallback(async (email: string, password: string) => {
+    setIsLoading(true);
 
-      try {
-        const response = await fetch(`${API_URL}/api/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email: email.toLowerCase(), password }),
-        });
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: email.toLowerCase(), password }),
+      });
 
-        const data = await response.json();
+      if (!response.ok) {
+        let message = "Error en el login";
 
-        if (!response.ok) {
-          setIsLoading(false);
-          return {
-            success: false,
-            error: data.message || "Credenciales inválidas",
-          };
-        }
+        try {
+          const err = await response.json();
+          message = err.message;
+        } catch {}
 
-        setUser(data.user);
+        return { success: false, error: message };
+      }
 
-        return { success: true };
-      } catch (error) {
+      const data = await response.json();
+
+      if (!data || !data.user) {
         return {
           success: false,
-          error: "Error de conexión con el servidor",
+          error: "Respuesta inválida del servidor",
         };
-      } finally {
-        setIsLoading(false);
       }
-    },
-    [],
-  );
+
+      setUser(data.user);
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: "Error de conexión con el servidor",
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // 🚪 LOGOUT
   const logout = useCallback(() => {
@@ -87,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string,
       password: string,
       role: "driver" | "parent",
-    ): Promise<{ success: boolean; error?: string }> => {
+    ) => {
       setIsLoading(true);
 
       try {
@@ -113,7 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        // 👉 Guardamos el usuario que viene del backend
         setUser(data.user);
 
         return { success: true };
@@ -145,7 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// 🧠 Hook personalizado
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
