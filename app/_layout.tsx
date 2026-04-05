@@ -1,15 +1,19 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
+import "react-native-reanimated";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Stack } from 'expo-router';
-import { AuthProvider } from '@/context/AuthContext';
-import { AppProvider } from '@/context/AppContext';
-import { Colors } from '@/constants/theme';
+import { Colors } from "@/constants/theme";
+import { AppProvider } from "@/context/AppContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Stack } from "expo-router";
 
 export const unstable_settings = {
-  anchor: '(tabs)',
+  anchor: "(tabs)",
 };
 
 // Custom theme with BustSystem colors
@@ -43,11 +47,18 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AppProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? BustSystemDarkTheme : BustSystemLightTheme}>
-          <Stack>
+        <ThemeProvider
+          value={
+            colorScheme === "dark" ? BustSystemDarkTheme : BustSystemLightTheme
+          }
+        >
+          <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            <Stack.Screen
+              name="modal"
+              options={{ presentation: "modal", title: "Modal" }}
+            />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>

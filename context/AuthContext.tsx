@@ -1,9 +1,11 @@
 import type { User } from "@/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -31,6 +33,20 @@ const API_URL = "https://z2ws6c1n-3000.usw3.devtunnels.ms";
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const storeUser = await AsyncStorage.getItem("user");
+        if (storeUser) {
+          setUser(JSON.parse(storeUser));
+        }
+      } catch (err) {
+        console.log("Error cargado usuario:", err);
+      }
+    };
+    loadUser();
+  }, []);
 
   // 🔐 LOGIN
   const login = useCallback(async (email: string, password: string) => {
@@ -65,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
       return { success: true };

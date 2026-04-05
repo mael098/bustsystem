@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    padding: 20,
+    padding: 40,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
