@@ -17,7 +17,7 @@ interface AuthContextType {
     email: string,
     password: string,
   ) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (
     name: string,
     email: string,
@@ -96,7 +96,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 🚪 LOGOUT
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await AsyncStorage.removeItem("user");
+    } catch (err) {
+      // Even if storage removal fails, clear the in-memory user so the session
+      // ends in the current app instance.
+      console.log("Error removing user from storage:", err);
+    }
     setUser(null);
   }, []);
 
@@ -133,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
+        await AsyncStorage.setItem("user", JSON.stringify(data.user));
         setUser(data.user);
 
         return { success: true };
