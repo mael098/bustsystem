@@ -19,7 +19,6 @@ import React, {
   useEffect,
   useState,
 } from "react";
-
 interface AppContextType {
   // Students
   students: Student[];
