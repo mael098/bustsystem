@@ -1,20 +1,14 @@
+import { ChildFormData, CreateChildModal } from "@/components/CreateChildModal";
 import { StudentCard } from "@/components/StudentCard";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import {
-  BorderRadius,
-  Colors,
-  FontSizes,
-  Spacing
-} from "@/constants/theme";
+import { BorderRadius, Colors, FontSizes, Spacing } from "@/constants/theme";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import type { Student } from "@/types";
+import type { Location, Student } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +22,7 @@ export default function StudentsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const {
     students,
     addStudent,
@@ -40,17 +35,25 @@ export default function StudentsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ChildFormData>({
     name: "",
     age: "",
     schoolName: "",
     schoolAddress: "",
+    schoolLocation: null,
     homeAddress: "",
+    homeLocation: null,
     parentPhone: "",
     notes: "",
   });
 
-  const filteredStudents = students.filter(
+  const isParent = user?.role === "parent";
+
+  const visibleStudents = isParent
+    ? students.filter((s) => s.parentId === user.id)
+    : students;
+
+  const filteredStudents = visibleStudents.filter(
     (s) =>
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.school.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -62,7 +65,9 @@ export default function StudentsScreen() {
       age: "",
       schoolName: "",
       schoolAddress: "",
+      schoolLocation: null,
       homeAddress: "",
+      homeLocation: null,
       parentPhone: "",
       notes: "",
     });
@@ -77,7 +82,9 @@ export default function StudentsScreen() {
         age: student.age.toString(),
         schoolName: student.school.name,
         schoolAddress: student.school.address,
+        schoolLocation: student.school.location,
         homeAddress: student.homeAddress,
+        homeLocation: student.homeLocation,
         parentPhone: student.parentPhone,
         notes: student.notes || "",
       });
@@ -92,38 +99,73 @@ export default function StudentsScreen() {
     resetForm();
   };
 
-  const handleSave = () => {
+  const handleFormFieldChange = (
+    field: keyof ChildFormData,
+    value: string | Location | null,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
     if (
       !formData.name.trim() ||
-      !formData.age ||
-      !formData.homeAddress.trim()
+      !formData.age.trim() ||
+      !formData.homeAddress.trim() ||
+      !formData.schoolAddress.trim()
     ) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert("Error", "Completa los campos obligatorios");
+      return;
+    }
+
+    if (!formData.homeLocation || !formData.schoolLocation) {
+      Alert.alert(
+        "Ubicaciones requeridas",
+        "Marca en el mapa la ubicación de la casa y de la escuela.",
+      );
+      return;
+    }
+
+    if (!isParent || !user?.id) {
+      Alert.alert("Error", "Solo un padre puede crear hijos");
+      return;
+    }
+
+    const parsedAge = Number.parseInt(formData.age, 10);
+    if (!Number.isFinite(parsedAge) || parsedAge <= 0) {
+      Alert.alert("Error", "La edad debe ser un número válido");
       return;
     }
 
     const studentData = {
       name: formData.name.trim(),
-      age: parseInt(formData.age, 10),
+      age: parsedAge,
       school: {
         name: formData.schoolName.trim() || "Not specified",
-        address: formData.schoolAddress.trim() || "Not specified",
-        location: { latitude: 40.7282, longitude: -73.9942 }, // Default location
+        address: formData.schoolAddress.trim(),
+        location: formData.schoolLocation,
       },
       homeAddress: formData.homeAddress.trim(),
-      homeLocation: { latitude: 40.7128, longitude: -74.006 }, // Default location
-      parentId: "parent-1",
+      homeLocation: formData.homeLocation,
+      parentId: user.id,
       parentPhone: formData.parentPhone.trim() || "Not provided",
       notes: formData.notes.trim() || undefined,
     };
 
-    if (editingStudent) {
-      updateStudent(editingStudent.id, studentData);
-    } else {
-      addStudent(studentData);
-    }
+    try {
+      if (editingStudent) {
+        await updateStudent(editingStudent.id, studentData);
+      } else {
+        await addStudent(studentData);
+      }
 
-    handleCloseModal();
+      handleCloseModal();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar el estudiante";
+      Alert.alert("Error", message);
+    }
   };
 
   const handleDelete = (student: Student) => {
@@ -135,7 +177,9 @@ export default function StudentsScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => deleteStudent(student.id),
+          onPress: () => {
+            void deleteStudent(student.id);
+          },
         },
       ],
     );
@@ -173,12 +217,14 @@ export default function StudentsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Students</Text>
-        <TouchableOpacity
-          onPress={() => handleOpenModal()}
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+        {isParent && (
+          <TouchableOpacity
+            onPress={() => handleOpenModal()}
+            style={[styles.addButton, { backgroundColor: colors.primary }]}
+          >
+            <Ionicons name="add" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Search */}
@@ -236,115 +282,22 @@ export default function StudentsScreen() {
         )}
       </ScrollView>
 
-      {/* Add/Edit Modal */}
-      <Modal
+      <CreateChildModal
         visible={isModalVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={handleCloseModal}
-      >
-        <View
-          style={[
-            styles.modalContainer,
-            { backgroundColor: colors.background },
-          ]}
-        >
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={handleCloseModal}>
-              <Text style={{ color: colors.primary, fontSize: FontSizes.md }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {editingStudent ? "Edit Student" : "Add Student"}
-            </Text>
-            <TouchableOpacity onPress={handleSave}>
-              <Text
-                style={{
-                  color: colors.primary,
-                  fontSize: FontSizes.md,
-                  fontWeight: "600",
-                }}
-              >
-                Save
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            style={styles.modalContent}
-            showsVerticalScrollIndicator={false}
-          >
-            <Input
-              label="Full Name *"
-              placeholder="Enter student name"
-              value={formData.name}
-              onChangeText={(v) => setFormData({ ...formData, name: v })}
-              leftIcon="person-outline"
-            />
-            <Input
-              label="Age *"
-              placeholder="Enter age"
-              value={formData.age}
-              onChangeText={(v) => setFormData({ ...formData, age: v })}
-              keyboardType="number-pad"
-              leftIcon="calendar-outline"
-            />
-            <Input
-              label="School Name"
-              placeholder="Enter school name"
-              value={formData.schoolName}
-              onChangeText={(v) => setFormData({ ...formData, schoolName: v })}
-              leftIcon="school-outline"
-            />
-            <Input
-              label="School Address"
-              placeholder="Enter school address"
-              value={formData.schoolAddress}
-              onChangeText={(v) =>
-                setFormData({ ...formData, schoolAddress: v })
+        editingStudent={editingStudent}
+        formData={formData}
+        onFieldChange={handleFormFieldChange}
+        onClose={handleCloseModal}
+        onSave={handleSave}
+        onDelete={
+          editingStudent
+            ? () => {
+                handleCloseModal();
+                handleDelete(editingStudent);
               }
-              leftIcon="location-outline"
-            />
-            <Input
-              label="Home Address *"
-              placeholder="Enter home address"
-              value={formData.homeAddress}
-              onChangeText={(v) => setFormData({ ...formData, homeAddress: v })}
-              leftIcon="home-outline"
-            />
-            <Input
-              label="Parent Phone"
-              placeholder="Enter parent phone"
-              value={formData.parentPhone}
-              onChangeText={(v) => setFormData({ ...formData, parentPhone: v })}
-              keyboardType="phone-pad"
-              leftIcon="call-outline"
-            />
-            <Input
-              label="Notes"
-              placeholder="Any special notes (allergies, etc.)"
-              value={formData.notes}
-              onChangeText={(v) => setFormData({ ...formData, notes: v })}
-              leftIcon="document-text-outline"
-              multiline
-            />
-
-            {editingStudent && (
-              <Button
-                title="Delete Student"
-                onPress={() => {
-                  handleCloseModal();
-                  handleDelete(editingStudent);
-                }}
-                variant="danger"
-                fullWidth
-                style={{ marginTop: Spacing.lg }}
-              />
-            )}
-          </ScrollView>
-        </View>
-      </Modal>
+            : undefined
+        }
+      />
     </View>
   );
 }
@@ -401,25 +354,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSizes.md,
-  },
-  modalContainer: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  modalTitle: {
-    fontSize: FontSizes.lg,
-    fontWeight: "600",
-  },
-  modalContent: {
-    flex: 1,
-    padding: Spacing.md,
   },
 });

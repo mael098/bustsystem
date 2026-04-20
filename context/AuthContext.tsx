@@ -17,7 +17,7 @@ interface AuthContextType {
     email: string,
     password: string,
   ) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (
     name: string,
     email: string,
@@ -28,23 +28,82 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = "https://z2ws6c1n-3000.usw3.devtunnels.ms";
+const STORAGE_USER_KEY = "user";
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "") ??
+  "https://z2ws6c1n-3000.usw3.devtunnels.ms";
+
+const getErrorMessage = async (
+  response: Response,
+  fallback: string,
+): Promise<string> => {
+  try {
+    const body = await response.json();
+    if (typeof body?.message === "string" && body.message.trim().length > 0) {
+      return body.message;
+    }
+  } catch {
+    // Ignore JSON parse errors and return fallback
+  }
+
+  return fallback;
+};
+
+const normalizeRole = (role: unknown): User["role"] => {
+  const normalized = String(role ?? "")
+    .trim()
+    .toLowerCase();
+  return normalized === "driver" ? "driver" : "parent";
+};
+
+const toAppUser = (value: unknown): User | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const raw = value as Record<string, unknown>;
+
+  if (!raw.id || !raw.email || !raw.name || !raw.token) {
+    return null;
+  }
+
+  return {
+    id: String(raw.id),
+    email: String(raw.email),
+    name: String(raw.name),
+    role: normalizeRole(raw.role),
+    token: String(raw.token),
+    phone: raw.phone ? String(raw.phone) : "",
+    avatar: raw.avatar ? String(raw.avatar) : undefined,
+  };
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
       try {
-        const storeUser = await AsyncStorage.getItem("user");
-        if (storeUser) {
-          setUser(JSON.parse(storeUser));
+        const storedUser = await AsyncStorage.getItem(STORAGE_USER_KEY);
+        if (!storedUser) {
+          return;
         }
-      } catch (err) {
-        console.log("Error cargado usuario:", err);
+
+        const parsedUser = toAppUser(JSON.parse(storedUser));
+        if (!parsedUser) {
+          await AsyncStorage.removeItem(STORAGE_USER_KEY);
+          return;
+        }
+
+        setUser(parsedUser);
+      } catch {
+        await AsyncStorage.removeItem(STORAGE_USER_KEY);
+      } finally {
+        setIsLoading(false);
       }
     };
+
     loadUser();
   }, []);
 
@@ -53,39 +112,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const loginUrl = `${API_URL}/api/auth/login`;
+      const response = await fetch(loginUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: email.toLowerCase(), password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       if (!response.ok) {
-        let message = "Error en el login";
-
-        try {
-          const err = await response.json();
-          message = err.message;
-        } catch {}
-
+        const message = await getErrorMessage(response, "Error en el login");
+        console.error("LOGIN_HTTP_ERROR", {
+          url: loginUrl,
+          status: response.status,
+          message,
+        });
         return { success: false, error: message };
       }
 
       const data = await response.json();
+      const parsedUser = toAppUser(data?.user);
 
-      if (!data || !data.user) {
+      if (!parsedUser) {
         return {
           success: false,
           error: "Respuesta inválida del servidor",
         };
       }
 
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+      await AsyncStorage.setItem(STORAGE_USER_KEY, JSON.stringify(parsedUser));
+      setUser(parsedUser);
 
       return { success: true };
     } catch (error) {
+      console.error("LOGIN_NETWORK_ERROR", error);
       return {
         success: false,
         error: "Error de conexión con el servidor",
@@ -96,7 +157,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // 🚪 LOGOUT
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await AsyncStorage.removeItem(STORAGE_USER_KEY);
+    } catch {}
+
     setUser(null);
   }, []);
 
@@ -111,32 +176,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
 
       try {
-        const response = await fetch(`${API_URL}/api/auth`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            password,
-            role,
-          }),
-        });
+        const payload = {
+          name,
+          fullName: name,
+          email: email.trim().toLowerCase(),
+          password,
+          role,
+        };
 
-        const data = await response.json();
+        const registerUrls = [
+          `${API_URL}/api/auth/register`,
+          `${API_URL}/api/auth`,
+        ];
 
-        if (!response.ok) {
+        let lastError = "Error al registrar";
+        const attemptedStatuses: { url: string; status: number }[] = [];
+        let data: unknown = null;
+        let succeeded = false;
+
+        for (const registerUrl of registerUrls) {
+          const response = await fetch(registerUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            data = await response.json();
+            succeeded = true;
+            break;
+          }
+
+          const message = await getErrorMessage(response, "Error al registrar");
+          lastError = message;
+          attemptedStatuses.push({ url: registerUrl, status: response.status });
+
+          if (response.status === 404) {
+            console.warn("REGISTER_FALLBACK_404", {
+              url: registerUrl,
+              message,
+            });
+          } else {
+            console.warn("REGISTER_HTTP_WARNING", {
+              url: registerUrl,
+              status: response.status,
+              message,
+            });
+          }
+
+          if (response.status !== 404) {
+            break;
+          }
+        }
+
+        if (!succeeded) {
+          console.warn("REGISTER_FAILED_ALL_ENDPOINTS", {
+            attemptedStatuses,
+            lastError,
+          });
           return {
             success: false,
-            error: data.message || "Error al registrar",
+            error: lastError,
           };
         }
 
-        setUser(data.user);
+        const parsedUser = toAppUser((data as { user?: unknown })?.user);
+        if (!parsedUser) {
+          return {
+            success: false,
+            error: "Respuesta inválida del servidor",
+          };
+        }
+
+        await AsyncStorage.setItem(
+          STORAGE_USER_KEY,
+          JSON.stringify(parsedUser),
+        );
+        setUser(parsedUser);
 
         return { success: true };
       } catch (error) {
+        console.error("REGISTER_NETWORK_ERROR", error);
         return {
           success: false,
           error: "Error de conexión con el servidor",

@@ -1,3 +1,7 @@
+import {
+  ChildFormData,
+  CreateChildModal,
+} from "@/components/CreateChildModal";
 import { RouteCard } from "@/components/RouteCard";
 import { StudentCard } from "@/components/StudentCard";
 import { Button } from "@/components/ui/Button";
@@ -7,8 +11,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
+import type { Location } from "@/types";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,12 +30,109 @@ export default function HomeScreen() {
   const { user, logout } = useAuth();
   const {
     students,
+    addStudent,
     currentRoute,
     startRoute,
     endRoute,
     updateStudentStatus,
     unreadCount,
   } = useApp();
+
+  const [isCreateChildModalVisible, setIsCreateChildModalVisible] =
+    useState(false);
+  const [childFormData, setChildFormData] = useState<ChildFormData>({
+    name: "",
+    age: "",
+    schoolName: "",
+    schoolAddress: "",
+    schoolLocation: null,
+    homeAddress: "",
+    homeLocation: null,
+    parentPhone: "",
+    notes: "",
+  });
+
+  const resetChildForm = () => {
+    setChildFormData({
+      name: "",
+      age: "",
+      schoolName: "",
+      schoolAddress: "",
+      schoolLocation: null,
+      homeAddress: "",
+      homeLocation: null,
+      parentPhone: "",
+      notes: "",
+    });
+  };
+
+  const closeCreateChildModal = () => {
+    setIsCreateChildModalVisible(false);
+    resetChildForm();
+  };
+
+  const handleChildFieldChange = (
+    field: keyof ChildFormData,
+    value: string | Location | null,
+  ) => {
+    setChildFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCreateChild = async () => {
+    if (!user || user.role !== "parent") {
+      Alert.alert("Error", "Solo un padre puede crear hijos");
+      return;
+    }
+
+    if (
+      !childFormData.name.trim() ||
+      !childFormData.age.trim() ||
+      !childFormData.homeAddress.trim() ||
+      !childFormData.schoolAddress.trim()
+    ) {
+      Alert.alert("Error", "Completa los campos obligatorios");
+      return;
+    }
+
+    if (!childFormData.homeLocation || !childFormData.schoolLocation) {
+      Alert.alert(
+        "Ubicaciones requeridas",
+        "Marca en el mapa la ubicación de la casa y de la escuela.",
+      );
+      return;
+    }
+
+    const parsedAge = Number.parseInt(childFormData.age, 10);
+    if (!Number.isFinite(parsedAge) || parsedAge <= 0) {
+      Alert.alert("Error", "La edad debe ser un número válido");
+      return;
+    }
+
+    try {
+      await addStudent({
+        name: childFormData.name.trim(),
+        age: parsedAge,
+        school: {
+          name: childFormData.schoolName.trim() || "Not specified",
+          address: childFormData.schoolAddress.trim(),
+          location: childFormData.schoolLocation,
+        },
+        homeAddress: childFormData.homeAddress.trim(),
+        homeLocation: childFormData.homeLocation,
+        parentId: user.id,
+        parentPhone: childFormData.parentPhone.trim() || "Not provided",
+        notes: childFormData.notes.trim() || undefined,
+      });
+
+      closeCreateChildModal();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo crear el hijo";
+      Alert.alert("Error", message);
+    }
+  };
 
   // Si no está autenticado
   if (!user) {
@@ -80,29 +183,48 @@ export default function HomeScreen() {
               {user.name}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/notifications")}
-            style={[
-              styles.notifButton,
-              { backgroundColor: colors.backgroundSecondary },
-            ]}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={24}
-              color={colors.text}
-            />
-            {unreadCount > 0 && (
-              <View style={[styles.badge, { backgroundColor: colors.error }]}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/notifications")}
+              style={[
+                styles.notifButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color={colors.text}
+              />
+              {unreadCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.error }]}>
+                  <Text style={styles.badgeText}>{unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={logout}
+              style={[
+                styles.notifButton,
+                { backgroundColor: colors.backgroundSecondary },
+              ]}
+            >
+              <Ionicons name="log-out-outline" size={24} color={colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Tus hijos
         </Text>
+
+        <Button
+          title="Agregar hijo"
+          onPress={() => setIsCreateChildModalVisible(true)}
+          fullWidth
+          icon={<Ionicons name="person-add-outline" size={20} color="#FFFFFF" />}
+          style={{ marginBottom: Spacing.md }}
+        />
 
         {students
           .filter((s) => s.parentId === user.id)
@@ -119,6 +241,17 @@ export default function HomeScreen() {
           onPress={() => router.push("/(tabs)/map")}
           fullWidth
           icon={<Ionicons name="location" size={20} color="#FFFFFF" />}
+        />
+
+        <CreateChildModal
+          visible={isCreateChildModalVisible}
+          editingStudent={null}
+          formData={childFormData}
+          onFieldChange={handleChildFieldChange}
+          onClose={closeCreateChildModal}
+          onSave={() => {
+            void handleCreateChild();
+          }}
         />
       </ScrollView>
     );
