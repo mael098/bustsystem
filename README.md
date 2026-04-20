@@ -10,7 +10,17 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Configure API URL
+
+   Create a `.env` file in the project root:
+
+   ```bash
+   EXPO_PUBLIC_API_URL=http://localhost:3000
+   ```
+
+   Replace the URL with your deployed API base URL when needed.
+
+3. Start the app
 
    ```bash
    npx expo start

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, BorderRadius, Spacing, FontSizes, getStatusColor, getStatusLabel } from '@/constants/theme';
+import { BorderRadius, Spacing, FontSizes, getStatusColor, getStatusLabel } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import type { StudentStatus } from '@/types';
 

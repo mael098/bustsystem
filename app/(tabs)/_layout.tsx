@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -12,10 +12,17 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const { unreadCount } = useApp();
 
   const isDriver = user?.role === "driver";
+
+  React.useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      router.replace("/(auth)/login");
+    }
+  }, [isAuthenticated, isLoading]);
 
   return (
     <Tabs

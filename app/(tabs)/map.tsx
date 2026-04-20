@@ -40,19 +40,16 @@ export default function MapScreen() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showLegend, setShowLegend] = useState(true);
 
-  const isDriverOnRoute =
-    !!currentRoute &&
-    currentRoute.status !== "completed" &&
-    currentRoute.status !== "not_started";
-
   const visibleStudents =
     user?.role === "parent"
       ? students.filter((s) => s.parentId === user.id)
       : students;
 
-  // 📍 TRACKING REAL DEL DISPOSITIVO
+  // 📍 TRACKING REAL DEL DISPOSITIVO (solo para conductores)
   useEffect(() => {
-    let subscription: any;
+    if (user?.role !== "driver") return;
+
+    let subscription: Location.LocationSubscription | null = null;
 
     const startTracking = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -76,7 +73,7 @@ export default function MapScreen() {
     startTracking();
 
     return () => subscription?.remove();
-  }, []);
+  }, [user, updateDriverLocation]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -146,7 +143,7 @@ export default function MapScreen() {
         )}
 
         {/* 🚍 BUS */}
-        {driverLocation && isDriverOnRoute && (
+        {driverLocation && (
           <Marker
             coordinate={{
               latitude: driverLocation.latitude,
